@@ -1,7 +1,5 @@
 # Day Trip Genie 🧞
 
-![Day Trip Genie Banner](https://via.placeholder.com/800x200/1D9E75/FFFFFF?text=Day+Trip+Genie)
-
 ## 📖 Overview
 **Day Trip Genie** is an AI-powered travel planner built using the **Google Cloud GenAI Agent Development Kit (ADK)** and **FastAPI**. It takes your starting location, mood, budget, and interests to generate a highly personalized, full-day itinerary.
 
