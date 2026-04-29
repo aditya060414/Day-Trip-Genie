@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Day Trip Genie</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1D9E75;
+    --green-light: rgba(29,158,117,0.12);
+    --green-dark: #0F6E56;
+    --amber: #EF9F27;
+    --bg: #F7F5F0;
+    --card: #FFFFFF;
+    --text: #1a1a18;
+    --muted: #6b6b65;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.2);
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --api-bg: #FFFBF0;
+    --api-border: #FAC775;
+    --api-color: #854F0B;
+    --api-input-bg: #fff;
+    --input-bg: #F7F5F0;
+  }
+
+  [data-theme="dark"] {
+    --bg: #141412;
+    --card: #1e1e1b;
+    --text: #f0ede6;
+    --muted: #9a9a90;
+    --border: rgba(255,255,255,0.1);
+    --border-strong: rgba(255,255,255,0.2);
+    --shadow: 0 2px 24px rgba(0,0,0,0.5);
+    --api-bg: #1e1a0e;
+    --api-border: #633806;
+    --api-color: #FAC775;
+    --api-input-bg: #141412;
+    --input-bg: #141412;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .page { max-width: 600px; margin: 0 auto; }
+
+  /* Topbar */
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.75rem;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 7px 16px 7px 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .theme-toggle:hover { border-color: var(--border-strong); }
+
+  .track {
+    width: 30px;
+    height: 17px;
+    border-radius: 999px;
+    background: var(--border-strong);
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  [data-theme="dark"] .track { background: var(--green); }
+
+  .thumb {
+    width: 11px;
+    height: 11px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  [data-theme="dark"] .thumb { transform: translateX(13px); }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.5s ease 0.05s both;
+  }
+
+  .header-badge {
+    display: inline-block;
+    background: var(--green-light);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    border: 1px solid rgba(29,158,117,0.2);
+  }
+
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 44px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    transition: color 0.3s;
+  }
+
+  .header h1 em { font-style: italic; color: var(--green); }
+
+  .header p {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    transition: color 0.3s;
+  }
+
+  /* API section */
+  .api-section {
+    background: var(--api-bg);
+    border: 1.5px solid var(--api-border);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    animation: fadeUp 0.5s ease 0.1s both;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .api-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--api-color);
+    margin-bottom: 8px;
+    transition: color 0.3s;
+  }
+
+  .api-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 10px;
+    border: 1.5px solid var(--api-border);
+    background: var(--api-input-bg);
+    color: var(--text);
+    outline: none;
+    transition: background 0.3s, border-color 0.2s, color 0.3s;
+  }
+
+  .api-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+
+  .api-note {
+    font-size: 12px;
+    color: var(--api-color);
+    margin-top: 6px;
+    transition: color 0.3s;
+  }
+
+  .api-note a { color: var(--green); text-decoration: underline; }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    animation: fadeUp 0.5s ease 0.15s both;
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .section { margin-bottom: 1.5rem; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    transition: color 0.3s;
+  }
+
+  .location-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.3s, color 0.3s;
+  }
+
+  .location-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+  }
+
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .pill {
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: var(--input-bg);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .pill:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+  .pill.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+  .budget-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .budget-btn {
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    padding: 10px 8px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--input-bg);
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .budget-btn .icon { display: block; font-size: 18px; margin-bottom: 4px; }
+  .budget-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+  .budget-btn.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+  .gen-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 14px;
+    border: none;
+    background: var(--green);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(29,158,117,0.3);
+    margin-top: 1.5rem;
+  }
+
+  .gen-btn:hover { background: var(--green-dark); box-shadow: 0 6px 20px rgba(29,158,117,0.4); }
+  .gen-btn:active { transform: scale(0.98); }
+  .gen-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Output */
+  .output-wrap { display: none; margin-top: 1.25rem; animation: fadeUp 0.4s ease both; }
+  .output-wrap.visible { display: block; }
+
+  .output-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .output-status { display: flex; align-items: center; gap: 8px; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .dot.loading { background: var(--amber); animation: pulse 1s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .output-status-text { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  .copy-btn {
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { background: var(--input-bg); color: var(--text); }
+
+  .output-body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    font-weight: 400;
+  }
+  
+  /* Markdown Styling */
+  .output-body h1, .output-body h2, .output-body h3 {
+    font-family: 'DM Serif Display', serif;
+    color: var(--green);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 400;
+  }
+  .output-body h1 { font-size: 24px; }
+  .output-body h2 { font-size: 20px; }
+  .output-body h3 { font-size: 18px; }
+  
+  .output-body p {
+    margin-bottom: 1rem;
+  }
+  
+  .output-body ul, .output-body ol {
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+  }
+  
+  .output-body li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .output-body strong {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .time-box {
+    background: var(--api-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .time-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  
+  .time-box h3 {
+    margin-top: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="topbar">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <div class="track"><div class="thumb"></div></div>
+      <span id="toggle-label" style="color:var(--muted);font-size:13px;">Dark mode</span>
+    </button>
+  </div>
+
+  <div class="header">
+    <div class="header-badge">AI-powered planner</div>
+    <h1>Day Trip <em>Genie</em></h1>
+    <p>Tell us your vibe. Get a full day adventure.</p>
+  </div>
+
+  <div class="api-section">
+    <div class="api-label">Your Gemini API Key</div>
+    <input class="api-input" id="api-key" type="password" placeholder="Paste your AI Studio API key here (or use .env)" />
+    <div class="api-note">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — no billing required</div>
+  </div>
+
+  <div class="card">
+    <div class="section">
+      <div class="field-label">Starting location</div>
+      <input class="location-input" id="location" type="text" placeholder="e.g. Sunnyvale, CA" value="Sunnyvale, CA" />
+    </div>
+
+    <div class="section">
+      <div class="field-label">Today's mood</div>
+      <div class="pill-row" id="mood-pills">
+        <button class="pill active" data-val="relaxing">Relaxing</button>
+        <button class="pill" data-val="adventurous">Adventurous</button>
+        <button class="pill" data-val="artsy">Artsy</button>
+        <button class="pill" data-val="foodie">Foodie</button>
+        <button class="pill" data-val="nature & outdoors">Nature</button>
+        <button class="pill" data-val="social & lively">Social</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field-label">Budget</div>
+      <div class="budget-row" id="budget-btns">
+        <button class="budget-btn active" data-val="affordable (free or cheap options only)">
+          <span class="icon">🌿</span>Affordable
+        </button>
+        <button class="budget-btn" data-val="moderate (mix of free and paid)">
+          <span class="icon">☕</span>Moderate
+        </button>
+        <button class="budget-btn" data-val="splurge (no budget limit, go all out)">
+          <span class="icon">✨</span>Splurge
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field-label">Interests (pick any)</div>
+      <div class="pill-row" id="interest-pills">
+        <button class="pill" data-val="museums & galleries">Museums</button>
+        <button class="pill" data-val="hiking & trails">Hiking</button>
+        <button class="pill" data-val="specialty coffee shops">Coffee</button>
+        <button class="pill" data-val="local markets">Markets</button>
+        <button class="pill" data-val="live music">Live music</button>
+        <button class="pill" data-val="photography spots">Photography</button>
+        <button class="pill" data-val="bookstores">Bookstores</button>
+        <button class="pill" data-val="street food">Street food</button>
+      </div>
+    </div>
+
+    <button class="gen-btn" id="gen-btn" onclick="generate()">Plan my day</button>
+  </div>
+
+  <div class="output-wrap" id="output-wrap">
+    <div class="output-card">
+      <div class="output-header">
+        <div class="output-status">
+          <div class="dot" id="status-dot"></div>
+          <span class="output-status-text" id="status-text">Your itinerary</span>
+        </div>
+        <button class="copy-btn" onclick="copyOutput()">Copy</button>
+      </div>
+      <div class="output-body" id="output-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Theme
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    document.getElementById('toggle-label').textContent = isDark ? 'Dark mode' : 'Light mode';
+    localStorage.setItem('theme', next);
+  }
+
+  (function() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('toggle-label').textContent = 'Light mode';
+    }
+  })();
+
+  // Pills
+  function setupSingle(id) {
+    document.getElementById(id).querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(id).querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  }
+
+  function setupMulti(id) {
+    document.getElementById(id).querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => btn.classList.toggle('active'));
+    });
+  }
+
+  setupSingle('mood-pills');
+  setupSingle('budget-btns');
+  setupMulti('interest-pills');
+
+  function getActive(id) {
+    return [...document.getElementById(id).querySelectorAll('.active')].map(b => b.dataset.val);
+  }
+
+  // Generate
+  async function generate() {
+    const apiKey = document.getElementById('api-key').value.trim();
+
+    const location = document.getElementById('location').value.trim() || 'Sunnyvale, CA';
+    const mood = getActive('mood-pills')[0] || 'relaxing';
+    const budget = getActive('budget-btns')[0] || 'affordable';
+    const interests = getActive('interest-pills');
+    const interestStr = interests.length ? ` Interests: ${interests.join(', ')}.` : '';
+    const query = `Plan a ${mood} day trip near ${location}. Budget: ${budget}.${interestStr} Create a full morning, afternoon, and evening itinerary with specific venue names, opening times, and practical tips. Make it feel warm and exciting.`;
+
+    const btn = document.getElementById('gen-btn');
+    const wrap = document.getElementById('output-wrap');
+    const dot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const body = document.getElementById('output-body');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Planning your day...';
+    wrap.classList.add('visible');
+    dot.className = 'dot loading';
+    statusText.textContent = 'Thinking and searching the web...';
+    body.textContent = '';
+
+    try {
+      // Calling our local Python backend instead of Gemini directly
+      const res = await fetch(`/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apiKey,
+          query: query
+        })
+      });
+
+      if (!res.ok) {
+         const errData = await res.json();
+         throw new Error(errData.detail || 'Server error');
+      }
+      
+      const data = await res.json();
+      const text = data.response || 'Could not generate itinerary.';
+      
+      dot.className = 'dot';
+      statusText.textContent = `Your ${mood} day near ${location}`;
+      body.innerHTML = marked.parse(text);
+    } catch(e) {
+      dot.className = 'dot';
+      statusText.textContent = 'Error';
+      body.innerHTML = `<p style="color:var(--amber)">Something went wrong: ${e.message}</p><p>Check your backend console for errors.</p>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Plan my day';
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('output-body').textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+</script>
+</body>
+</html>
